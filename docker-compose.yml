@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  web:
+    build: ./app
+    ports:
+      - "5000:5000"
+    environment:
+      # Use environment variables for configuration
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
+      - DB_NAME=votingapp
+    depends_on:
+      - db
+    # Optional: Add a healthcheck to wait for the database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: postgres:13-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=votingapp
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - voting_data:/var/lib/postgresql/data
+
+volumes:
+  voting_data:
