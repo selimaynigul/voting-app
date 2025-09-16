@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, request, render_template_string, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
 
@@ -19,26 +19,6 @@ def get_db_connection():
     )
     return conn
 
-# HTML template for the voting page
-VOTE_TEMPLATE = """
-<!doctype html>
-<html>
-<head><title>Oylama Uygulaması</title></head>
-<body>
-    <h1>Cats vs. Dogs</h1>
-    <form method="post" action="{{ url_for('vote') }}">
-        <button type="submit" name="vote" value="cats">Cats</button>
-        <button type="submit" name="vote" value="dogs">Dogs</button>
-    </form>
-    <h2>Results:</h2>
-    <ul>
-        <li>Cats: {{ cat_votes }}</li>
-        <li>Dogs: {{ dog_votes }}</li>
-    </ul>
-</body>
-</html>
-"""
-
 @app.route('/')
 def index():
     conn = get_db_connection()
@@ -55,7 +35,7 @@ def index():
     cur.close()
     conn.close()
 
-    return render_template_string(VOTE_TEMPLATE, cat_votes=cat_votes, dog_votes=dog_votes)
+    return render_template('index.html', cat_votes=cat_votes, dog_votes=dog_votes)
 
 @app.route('/vote', methods=['POST'])
 def vote():
@@ -67,6 +47,17 @@ def vote():
     cur.close()
     conn.close()
     return redirect(url_for('index'))
+
+# A health endpoint for Kubernetes probes
+@app.route('/healthz')
+def healthz():
+    try:
+        conn = get_db_connection()
+        conn.close()
+        return "OK", 200
+    except Exception as e:
+        app.logger.error(f"Health check failed: {e}")
+        return "Not OK", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

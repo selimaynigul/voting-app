@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Oylama Uygulaması</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Cats vs. Dogs</h1>
+    <form method="post" action="{{ url_for('vote') }}">
+      <button type="submit" name="vote" value="cats">Cats</button>
+      <button type="submit" name="vote" value="dogs">Dogs</button>
+    </form>
+    <div class="results">
+      <h2>Results:</h2>
+      <ul>
+        <li>Cats: {{ cat_votes }}</li>
+        <li>Dogs: {{ dog_votes }}</li>
+      </ul>
+    </div>
+  </body>
+</html>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
