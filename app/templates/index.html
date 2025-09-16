@@ -1,25 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Oylama Uygulaması</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voting App - Cats vs Dogs</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="{{ url_for('static', filename='styles.css') }}"
     />
   </head>
   <body>
-    <h1>Cats vs. Dogs</h1>
-    <form method="post" action="{{ url_for('vote') }}">
-      <button type="submit" name="vote" value="cats">Cats</button>
-      <button type="submit" name="vote" value="dogs">Dogs</button>
-    </form>
-    <div class="results">
-      <h2>Results:</h2>
-      <ul>
-        <li>Cats: {{ cat_votes }}</li>
-        <li>Dogs: {{ dog_votes }}</li>
-      </ul>
+    <div class="container">
+      <h1>🐱 Cats vs Dogs 🐶</h1>
+
+      <div class="vote-section">
+        <p>Cast your vote!</p>
+        <form method="POST" action="/vote" style="display: inline">
+          <button
+            type="submit"
+            name="vote"
+            value="cats"
+            class="vote-button cat-button"
+          >
+            🐱 Vote for Cats
+          </button>
+        </form>
+        <form method="POST" action="/vote" style="display: inline">
+          <button
+            type="submit"
+            name="vote"
+            value="dogs"
+            class="vote-button dog-button"
+          >
+            🐶 Vote for Dogs
+          </button>
+        </form>
+      </div>
+
+      <div class="results">
+        <h2>Current Results</h2>
+        <div>
+          <p><strong>Cats:</strong> {{ cat_votes }} votes</p>
+          <p><strong>Dogs:</strong> {{ dog_votes }} votes</p>
+        </div>
+
+        {% set total_votes = cat_votes + dog_votes %} {% if total_votes > 0 %}
+        <div class="result-bar">
+          {% set cat_percentage = (cat_votes / total_votes) * 100 %} {% set
+          dog_percentage = (dog_votes / total_votes) * 100 %}
+
+          <div class="cat-bar" data-width="{{ cat_percentage }}">
+            {% if cat_percentage > 20 %}🐱 {{ "%.1f"|format(cat_percentage)
+            }}%{% endif %}
+          </div>
+          <div class="dog-bar" data-width="{{ dog_percentage }}">
+            {% if dog_percentage > 20 %}🐶 {{ "%.1f"|format(dog_percentage)
+            }}%{% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <p><em>Total votes: {{ total_votes }}</em></p>
+      </div>
     </div>
+
+    <script>
+      // Set bar widths from data attributes
+      document.addEventListener("DOMContentLoaded", function () {
+        const catBar = document.querySelector(".cat-bar");
+        const dogBar = document.querySelector(".dog-bar");
+
+        if (catBar && dogBar) {
+          const catWidth = catBar.getAttribute("data-width");
+          const dogWidth = dogBar.getAttribute("data-width");
+
+          if (catWidth && dogWidth) {
+            catBar.style.width = catWidth + "%";
+            dogBar.style.width = dogWidth + "%";
+          }
+        }
+      });
+    </script>
   </body>
 </html>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
