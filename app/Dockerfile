@@ -1,47 +1,69 @@
+# =========================
 # Stage 1: Build dependencies
+# =========================
 FROM python:3.11-slim AS builder
+# Use Python 3.11 slim image as the base for building dependencies
 
 WORKDIR /usr/src/app
+# Set working directory inside the container
 
-# Install build tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Set pip cache directory to improve rebuild performance
+ENV PIP_CACHE_DIR=/root/.cache/pip
 
-# Upgrade pip and tools
-RUN pip install --upgrade pip setuptools wheel
+# Copy only requirements.txt first to leverage Docker layer caching
+# This ensures that dependencies are only rebuilt if requirements.txt changes
+COPY requirements.txt .
 
-# Install Python deps to /install
-COPY requirements.txt ./
-RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
+# Build wheel files for all Python dependencies
+# Wheels allow faster installation in the final image
+RUN pip wheel --wheel-dir=/usr/src/app/wheels -r requirements.txt
 
+# =========================
 # Stage 2: Production image
-FROM python:3.11-slim
+# =========================
+FROM python:3.11-slim AS final
+# Use a fresh slim Python image for the final runtime
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/home/appuser/.local/bin:$PATH"
+# PYTHONDONTWRITEBYTECODE: prevent .pyc files
+# PYTHONUNBUFFERED: unbuffered stdout/stderr for logging
+# PATH: include local user binaries
 
 WORKDIR /usr/src/app
+# Set working directory in the final image
 
-# Create non-root user
+# Install runtime dependencies (minimal)
+# libpq5 is needed for PostgreSQL client (psycopg2)
+# curl is used for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+# Clean apt cache to reduce image size
+
+# Create a non-root user for security
 RUN groupadd --system --gid 1001 appuser && \
-    useradd --system --uid 1001 --gid appuser appuser
+    useradd --system --uid 1001 --gid appuser --home /home/appuser --create-home appuser
 
+# Copy Python wheels and application code
+COPY --from=builder /usr/src/app/wheels /usr/src/app/wheels
+COPY --chown=appuser:appuser . .
+# Using --chown ensures the non-root user owns the files
+
+# Install Python dependencies from wheels without internet
+RUN pip install --no-index --find-links=/usr/src/app/wheels -r requirements.txt
+
+# Switch to the non-root user
 USER appuser
 
-# Copy dependencies from builder
-COPY --from=builder --chown=appuser:appuser /install /usr/local
-
-# Set environment
-ENV PATH=/home/appuser/.local/bin:$PATH
-ENV PYTHONUNBUFFERED=1
-
-# Copy app code
-COPY --chown=appuser:appuser . .
-
-# Expose app port
+# Expose Flask app port
 EXPOSE 5000
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/ || exit 1
+# Add a healthcheck for Docker to monitor container health
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/healthz || exit 1
 
-# Run app
+# Default command to run the app
 CMD ["python", "app.py"]
