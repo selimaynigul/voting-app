@@ -1,34 +1,47 @@
-# Multi-stage build for a smaller final image
-# Stage 1: Build the application
-FROM python:3.9-slim-buster AS builder
+# Stage 1: Build dependencies
+FROM python:3.11-slim AS builder
 
-# Set working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy requirements file and install dependencies
+# Install build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and tools
+RUN pip install --upgrade pip setuptools wheel
+
+# Install Python deps to /install
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
 
-# Copy application source code
-COPY . .
+# Stage 2: Production image
+FROM python:3.11-slim
 
-# Stage 2: Create a minimal production image
-FROM python:3.9-slim-buster
+WORKDIR /usr/src/app
 
-# Create a non-root user and switch to it for security
+# Create non-root user
 RUN groupadd --system --gid 1001 appuser && \
     useradd --system --uid 1001 --gid appuser appuser
+
 USER appuser
 
-# Set working directory
-WORKDIR /usr/src/app
+# Copy dependencies from builder
+COPY --from=builder --chown=appuser:appuser /install /usr/local
 
-# Copy only the necessary files from the builder stage
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=builder /usr/src/app .
+# Set environment
+ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONUNBUFFERED=1
 
-# Expose the application port
+# Copy app code
+COPY --chown=appuser:appuser . .
+
+# Expose app port
 EXPOSE 5000
 
-# Define the command to run the application
-CMD ["python", "./app.py"]
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/ || exit 1
+
+# Run app
+CMD ["python", "app.py"]
