@@ -1,14 +1,14 @@
 import os
 import psycopg2
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
 # Database connection setup
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_USER = os.environ.get('DB_USER', 'postgres')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', 'mysecretpassword')
-DB_NAME = os.environ.get('DB_NAME', 'votingapp')
+DB_HOST = os.environ.get('DB_HOST')
+DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+DB_NAME = os.environ.get('DB_NAME')
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -19,36 +19,46 @@ def get_db_connection():
     )
     return conn
 
+def get_votes():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM votes WHERE choice = 'messi';")
+    messi_votes = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM votes WHERE choice = 'ronaldo';")
+    ronaldo_votes = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return messi_votes, ronaldo_votes
+
 @app.route('/')
 def index():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS votes (id serial PRIMARY KEY, choice VARCHAR(50));")
     conn.commit()
-
-    cur.execute("SELECT COUNT(*) FROM votes WHERE choice = 'cats';")
-    cat_votes = cur.fetchone()[0]
-
-    cur.execute("SELECT COUNT(*) FROM votes WHERE choice = 'dogs';")
-    dog_votes = cur.fetchone()[0]
-
     cur.close()
     conn.close()
-
-    return render_template('index.html', cat_votes=cat_votes, dog_votes=dog_votes)
+    messi_votes, ronaldo_votes = get_votes()
+    return render_template('index.html', messi_votes=messi_votes, ronaldo_votes=ronaldo_votes)
 
 @app.route('/vote', methods=['POST'])
 def vote():
-    vote_choice = request.form['vote']
+    vote_choice = request.json.get('vote')
+    
+    if vote_choice not in ['messi', 'ronaldo']:
+        return jsonify({'status': 'error', 'message': 'Invalid vote'}), 400
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("INSERT INTO votes (choice) VALUES (%s);", (vote_choice,))
     conn.commit()
     cur.close()
     conn.close()
-    return redirect(url_for('index'))
+    
+    # after voting, return the updated vote counts
+    messi_votes, ronaldo_votes = get_votes()
+    return jsonify({'status': 'success', 'messi_votes': messi_votes, 'ronaldo_votes': ronaldo_votes})
 
-# A health endpoint for Kubernetes probes
 @app.route('/healthz')
 def healthz():
     try:
