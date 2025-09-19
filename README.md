@@ -18,6 +18,7 @@ Before starting, ensure you have the following tools installed:
 - **Docker & Docker Compose**: [Download Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - **kubectl**: [kubectl Installation Guide](https://kubernetes.io/docs/tasks/tools/)
 - **Kind** (Kubernetes IN Docker): [Kind Installation Guide](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- **Helm** (Kubernetes package manager): [Helm Installation Guide](https://helm.sh/docs/intro/install/)
 
 ## Initial Configuration
 
@@ -101,17 +102,19 @@ To try out the Helm-based deployment, switch to the Helm feature branch:
 git checkout feature/helm
 ```
 
-- **Dry-run install** (test templates without deploying):
+- **Build the Docker image**:
 
-  ```sh
-  helm install voting-app ./voting-app-chart --dry-run --debug
-  ```
+   ```sh
+   docker build -t voting-app-web:latest ./app
+   ```
 
 - **Install Helm chart**:
 
   ```sh
   helm install voting-app ./voting-app-chart
   ```
+
+  > for testing without deploy add "--dry-run --debug" to the end of the command.
 
   > After installing the Helm chart, the web application is exposed via a NodePort service.  
   > You can access it in your browser at [http://localhost:30000](http://localhost:30000).
