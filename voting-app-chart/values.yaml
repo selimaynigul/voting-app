@@ -192,6 +192,7 @@ webapp:
   replicas: 2
   port: 5000
   image:
+    repository: voting-app-web
     tag: "latest"
     pullPolicy: IfNotPresent
   db:
