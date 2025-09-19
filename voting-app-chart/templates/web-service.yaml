@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: webapp-service
+  name: {{ .Values.webapp.service.name }}
 spec:
   selector:
-    app: webapp
+    app: {{ .Values.webapp.appLabel }}
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 5000
-      nodePort: 30000
-  type: NodePort
+      port: {{ .Values.webapp.service.port }}
+      targetPort: {{ .Values.webapp.port }}
+      nodePort: {{ .Values.webapp.service.nodePort }}
+  type: {{ .Values.webapp.service.type }}

@@ -1,52 +1,52 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webapp-deployment
+  name: {{ .Values.webapp.name }}
   labels:
-    app: webapp
+    app: {{ .Values.webapp.appLabel }}
 spec:
-  replicas: 2
+  replicas: {{ .Values.webapp.replicas }}
   selector:
     matchLabels:
-      app: webapp
+      app: {{ .Values.webapp.appLabel }}
   template:
     metadata:
       labels:
-        app: webapp
+        app: {{ .Values.webapp.appLabel }}
     spec:
       containers:
-        - name: webapp
+        - name: {{ .Values.webapp.containerName }}
           image: "{{ .Values.webapp.image.repository }}:{{ .Values.webapp.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.webapp.image.pullPolicy }}
           ports:
-            - containerPort: 5000
+            - containerPort: {{ .Values.webapp.port }}
           env:
             - name: DB_HOST
-              value: postgres-service
+              value: {{ .Values.webapp.db.host }}
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
+                  name: {{ .Values.webapp.db.secretName }}
                   key: POSTGRES_USER
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
+                  name: {{ .Values.webapp.db.secretName }}
                   key: POSTGRES_PASSWORD
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
+                  name: {{ .Values.webapp.db.secretName }}
                   key: POSTGRES_DB
           livenessProbe:
             httpGet:
-              path: /healthz
-              port: 5000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+              path: {{ .Values.webapp.liveness.path }}
+              port: {{ .Values.webapp.port }}
+            initialDelaySeconds: {{ .Values.webapp.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webapp.liveness.periodSeconds }}
           readinessProbe:
             httpGet:
-              path: /healthz
-              port: 5000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+              path: {{ .Values.webapp.readiness.path }}
+              port: {{ .Values.webapp.port }}
+            initialDelaySeconds: {{ .Values.webapp.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.webapp.readiness.periodSeconds }}

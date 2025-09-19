@@ -164,13 +164,49 @@ tolerations: []
 
 affinity: {}
 
-webapp:
-  replicaCount: 2
-  image:
-    repository: voting-app-web
-    tag: latest
-
 db:
+  name: postgres-deployment
+  appLabel: postgres
+  containerName: postgres
+  replicas: 1
+  port: 5432
+  volumeName: postgres-storage
+  mountPath: /var/lib/postgresql/data
+  pvcName: postgres-pvc
+  secretName: db-credentials
   image:
     repository: postgres
-    tag: 13-alpine
+    tag: "15-alpine"
+  pvc:
+    storage: 1Gi
+    accessMode: ReadWriteOnce
+  service:
+    name: postgres-service
+    port: 5432
+    type: ClusterIP
+
+webapp:
+  name: webapp-deployment
+  appLabel: webapp
+  containerName: webapp
+  replicas: 2
+  port: 5000
+  image:
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  db:
+    host: postgres-service
+    secretName: db-credentials
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  readiness:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  service:
+    name: webapp-service
+    type: NodePort
+    port: 80
+    nodePort: 30000
