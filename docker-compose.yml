@@ -52,15 +52,7 @@ services:
       start_period: 10s
     networks:
       - voting-net
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "0.5"
-        reservations:
-          memory: 512M
-          cpus: "0.25"
-
+      
 volumes:
   voting_data:
     driver: local
