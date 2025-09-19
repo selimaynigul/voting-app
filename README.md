@@ -2,6 +2,8 @@
 
 A simple two-tier voting application where users can vote for either Cat or Dog. Votes are stored in a database. This project demonstrates DevOps practices such as containerization, orchestration, and deployment on a local Kubernetes cluster using Kind.
 
+![Web App Screenshot](assets/screenshot.png)
+
 ## Clone the Repository
 
 ```sh
@@ -41,7 +43,7 @@ Replace `your_username`, `your_password`, and `your_database` with your desired 
 1. **Start the application stack**:
 
    ```sh
-   docker-compose up --build
+   docker-compose up
    ```
 
    This will start both the web and database containers. The web service waits for the database to be ready.
