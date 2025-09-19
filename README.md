@@ -1,6 +1,6 @@
 # Voting App
 
-A simple two-tier voting application where users can vote for either Cat or Dog. Votes are stored in a database. This project demonstrates DevOps practices such as containerization, orchestration, and deployment on a local Kubernetes cluster using Kind.
+A simple two-tier voting application where users can vote for either Messi or Ronaldo. Votes are stored in a database. This project demonstrates DevOps practices such as containerization, orchestration, and deployment on a local Kubernetes cluster using Kind.
 
 ![Web App Screenshot](assets/screenshot.png)
 
